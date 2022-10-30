@@ -21,19 +21,6 @@ class _SubPrimitiveFunction(_PrimitiveFunction):
         return function_result, derivative_result
 
 
-class _DivPrimitiveFunction(_PrimitiveFunction):
-    def apply(self, parameters: tuple) -> tuple:
-        lhs = parameters[0]
-        rhs = parameters[1]
-        derivative_lhs = parameters[2]
-        derivative_rhs = parameters[3]
-
-        function_result = lhs / rhs
-        derivative_result = (derivative_lhs * rhs - derivative_rhs * lhs) / lhs ** 2
-
-        return function_result, derivative_result
-
-
 class _AddPrimitiveFunction(_PrimitiveFunction):
 
     def apply(self, parameters: tuple) -> tuple:
@@ -177,6 +164,16 @@ def mult(rhs, lhs) -> _TreeNode:
     return _DualOperator(rhs, _MultPrimitiveFunction(), lhs)
 
 
+"""
+    f(x) / g(x) = f(x) * g(x) ^ -1
+"""
+
+def div(rhs, lhs) -> _TreeNode:
+    rhs, lhs = __get_args(rhs, lhs)
+    lhs = pow(lhs, -1)
+    return mult(lhs, rhs)
+
+
 def sub(rhs, lhs) -> _TreeNode:
     rhs, lhs = __get_args(rhs, lhs)
     return _DualOperator(rhs, _SubPrimitiveFunction(), lhs)
@@ -215,5 +212,3 @@ def __get_args(arg0, arg1):
         raise Exception("Invalid argument exception.")
 
     return arg0, arg1
-
-
