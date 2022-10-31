@@ -2,13 +2,13 @@ import math
 from abc import abstractmethod
 
 
-class _PrimitiveFunction:
+class _Function:
     @abstractmethod
     def apply(self, parameters: tuple) -> tuple:
         pass
 
 
-class _SubPrimitiveFunction(_PrimitiveFunction):
+class _SubFunction(_Function):
     def apply(self, parameters: tuple) -> tuple:
         lhs = parameters[0]
         rhs = parameters[1]
@@ -21,7 +21,7 @@ class _SubPrimitiveFunction(_PrimitiveFunction):
         return function_result, derivative_result
 
 
-class _AddPrimitiveFunction(_PrimitiveFunction):
+class _AddFunction(_Function):
 
     def apply(self, parameters: tuple) -> tuple:
         lhs = parameters[0]
@@ -34,7 +34,7 @@ class _AddPrimitiveFunction(_PrimitiveFunction):
         return function_result, derivative_result
 
 
-class _MultPrimitiveFunction(_PrimitiveFunction):
+class _MultFunction(_Function):
     def apply(self, parameters: tuple) -> tuple:
         lhs = parameters[0]
         rhs = parameters[1]
@@ -47,7 +47,7 @@ class _MultPrimitiveFunction(_PrimitiveFunction):
         return function_result, derivative_result
 
 
-class _PowPrimitiveFunction(_PrimitiveFunction):
+class _PowFunction(_Function):
     def apply(self, parameters: tuple) -> tuple:
         base = parameters[0]
         exponent = parameters[1]
@@ -59,7 +59,7 @@ class _PowPrimitiveFunction(_PrimitiveFunction):
         return function_result, derivative_result
 
 
-class _SinPrimitiveFunction(_PrimitiveFunction):
+class _SinFunction(_Function):
 
     def apply(self, parameters: tuple) -> tuple:
         value = parameters[0]
@@ -70,7 +70,7 @@ class _SinPrimitiveFunction(_PrimitiveFunction):
         return function_result, derivative_result
 
 
-class _CosPrimitiveFunction(_PrimitiveFunction):
+class _CosFunction(_Function):
 
     def apply(self, parameters: tuple) -> tuple:
         value = parameters[0]
@@ -82,9 +82,45 @@ class _CosPrimitiveFunction(_PrimitiveFunction):
         return function_result, derivative_result
 
 
+class _LnFunction(_Function):
+    def apply(self, parameters: tuple) -> tuple:
+        value = parameters[0]
+        derivative_value = parameters[1]
+
+        function_result = math.log(value)
+        derivative_result = derivative_value / value
+        return function_result, derivative_result
+
+
 class _TreeNode:
     @abstractmethod
     def evaluate(self, respect_to) -> tuple:
+        pass
+
+    def __init__(self, function: _Function):
+        self.__function = function
+
+    def get_function(self) -> _Function:
+        return self.__function
+
+    @abstractmethod
+    def __add__(self, other):
+        pass
+
+    @abstractmethod
+    def __sub__(self, other):
+        pass
+
+    @abstractmethod
+    def __mul__(self, other):
+        pass
+
+    @abstractmethod
+    def __truediv__(self, other):
+        pass
+
+    @abstractmethod
+    def __pow__(self, power):
         pass
 
 
@@ -92,20 +128,14 @@ class _Operator(_TreeNode):
     def evaluate(self, respect_to) -> tuple:
         pass
 
-    __function: _PrimitiveFunction
-
-    def __init__(self, function: _PrimitiveFunction):
-        self.__function = function
-
-    def get_function(self) -> _PrimitiveFunction:
-        return self.__function
+    __function: _Function
 
 
 class _DualOperator(_Operator):
     __left_child: _TreeNode
     __right_child: _TreeNode
 
-    def __init__(self, left_child: _TreeNode, function: _PrimitiveFunction, right_child: _TreeNode):
+    def __init__(self, left_child: _TreeNode, function: _Function, right_child: _TreeNode):
         super().__init__(function)
         self.__left_child = left_child
         self.__right_child = right_child
@@ -116,11 +146,26 @@ class _DualOperator(_Operator):
         args = (value_lhs, value_rhs, derivative_lhs, derivative_rhs)
         return super().get_function().apply(args)
 
+    def __add__(self, other):
+        return add(self, other)
+
+    def __sub__(self, other):
+        return sub(self, other)
+
+    def __mul__(self, other):
+        return mult(self, other)
+
+    def __truediv__(self, other):
+        return div(self, other)
+
+    def __pow__(self, power):
+        return pow(self, power)
+
 
 class _SingleOperator(_Operator):
     __child: _TreeNode
 
-    def __init__(self, child: _TreeNode, function: _PrimitiveFunction):
+    def __init__(self, child: _TreeNode, function: _Function):
         super().__init__(function)
         self.__child = child
 
@@ -130,6 +175,21 @@ class _SingleOperator(_Operator):
         args = (value, derivative)
 
         return super().get_function().apply(args)
+
+    def __add__(self, other):
+        return add(self, other)
+
+    def __sub__(self, other):
+        return sub(self, other)
+
+    def __mul__(self, other):
+        return mult(self, other)
+
+    def __truediv__(self, other):
+        return div(self, other)
+
+    def __pow__(self, power):
+        return pow(self, power)
 
 
 class Variable(_TreeNode):
@@ -150,23 +210,39 @@ class Variable(_TreeNode):
     def set_value(self, value: float):
         self.__value = value
 
+    def __add__(self, other):
+        return add(self, other)
+
+    def __sub__(self, other):
+        return sub(self, other)
+
+    def __mul__(self, other):
+        return mult(self, other)
+
+    def __truediv__(self, other):
+        return div(self, other)
+
+    def __pow__(self, power):
+        return pow(self, power)
+
     def __str__(self):
-        return "Operand"
+        return "(" + str(self.__value) + ")"
 
 
 def add(rhs, lhs) -> _TreeNode:
     rhs, lhs = __get_args(rhs, lhs)
-    return _DualOperator(rhs, _AddPrimitiveFunction(), lhs)
+    return _DualOperator(rhs, _AddFunction(), lhs)
 
 
 def mult(rhs, lhs) -> _TreeNode:
     rhs, lhs = __get_args(rhs, lhs)
-    return _DualOperator(rhs, _MultPrimitiveFunction(), lhs)
+    return _DualOperator(rhs, _MultFunction(), lhs)
 
 
 """
     f(x) / g(x) = f(x) * g(x) ^ -1
 """
+
 
 def div(rhs, lhs) -> _TreeNode:
     rhs, lhs = __get_args(rhs, lhs)
@@ -176,22 +252,27 @@ def div(rhs, lhs) -> _TreeNode:
 
 def sub(rhs, lhs) -> _TreeNode:
     rhs, lhs = __get_args(rhs, lhs)
-    return _DualOperator(rhs, _SubPrimitiveFunction(), lhs)
+    return _DualOperator(rhs, _SubFunction(), lhs)
 
 
 def pow(base, ex) -> _TreeNode:
     base, ex = __get_args(base, ex)
-    return _DualOperator(base, _PowPrimitiveFunction(), ex)
+    return _DualOperator(base, _PowFunction(), ex)
 
 
 def cos(rad) -> _TreeNode:
     rad = __get_arg(rad)
-    return _SingleOperator(rad, _CosPrimitiveFunction())
+    return _SingleOperator(rad, _CosFunction())
 
 
 def sin(rad) -> _TreeNode:
     rad = __get_arg(rad)
-    return _SingleOperator(rad, _SinPrimitiveFunction())
+    return _SingleOperator(rad, _SinFunction())
+
+
+def ln(var) -> _TreeNode:
+    var = __get_arg(var)
+    return _SingleOperator(var, _LnFunction())
 
 
 def __get_arg(arg0):
