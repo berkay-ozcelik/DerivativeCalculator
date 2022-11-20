@@ -55,7 +55,13 @@ class _PowFunction(_Function):
         derivative_exponent = parameters[3]
 
         function_result = base ** exponent
-        derivative_result = function_result * (exponent * derivative_base / base + derivative_exponent * math.log(base))
+        negative = base < 0
+        base = abs(base)
+        derivative_result = function_result * (
+                exponent * derivative_base / base + derivative_exponent * math.log(base))
+        if negative:
+            return function_result, -derivative_result
+
         return function_result, derivative_result
 
 

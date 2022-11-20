@@ -83,22 +83,25 @@ def test_case_2():
 
 
 """
-    f(x) = x^2 / 4
-    f (1) = 0.25
-    f'(1) = 0.50
+    f(x) = x^2
+    
+    f (-8) = 64
+    f'(-8) = -16
+    
+    f (1) = 1
+    f'(1) = 2
 
-    f (2) = 1.00
-    f'(1) = 1.00
+    f (2) = 4
+    f'(2) = 4
 
 """
 
 
 def test_case_3():
     x = f.Variable()
-    function = x ** 2 / 4
-    evaluate_and_print(function, 1, x)
+    function = x ** 2
+    evaluate_and_print(function, -8, x)
     evaluate_and_print(function, 2, x)
-
 
 
 def evaluate_and_print(function, at_value, respect_to):
